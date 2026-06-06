@@ -61,10 +61,14 @@ sudo apt-get install -y \
     libopenjp2-7 \
     libopenblas-dev
 
-# Install Tesseract OCR
-echo -e "${GREEN}[3/7] Installing Tesseract OCR...${NC}"
+# Install Tesseract OCR with ALL available language packs
+echo -e "${GREEN}[3/7] Installing Tesseract OCR with all languages...${NC}"
+echo "    Installing: English, Swahili, French, Arabic, Spanish, German,"
+echo "    Chinese, Japanese, Korean, Russian, Portuguese, Dutch, Polish, Thai,"
+echo "    Vietnamese, Hindi, Bengali, Turkish, Hebrew, and 100+ more languages"
 sudo apt-get install -y \
     tesseract-ocr \
+    tesseract-ocr-all \
     libtesseract-dev
 
 # Install optional camera support
@@ -73,10 +77,24 @@ sudo apt-get install -y \
     libcamera-dev \
     libopencv-dev
 
+# Install audio and text-to-speech support
+echo -e "${GREEN}[4b/7] Installing audio and TTS libraries...${NC}"
+sudo apt-get install -y \
+    alsa-utils \
+    pulseaudio \
+    espeak-ng \
+    libopus0 \
+    libopusfile0
+
 # Install Python packages
 echo -e "${GREEN}[5/7] Installing Python packages...${NC}"
 pip3 install --upgrade pip setuptools wheel
 pip3 install -r requirements.txt --upgrade
+
+# Install TTS voice models (will download automatically on first use)
+echo -e "${GREEN}[5b/7] Setting up text-to-speech voices...${NC}"
+mkdir -p ~/.local/share/piper-tts/voices
+python3 -c "import piper; print('Piper TTS ready')" 2>/dev/null || echo "Piper will download voices on first use"
 
 # Create data directory
 echo -e "${GREEN}[6/7] Creating data directories...${NC}"

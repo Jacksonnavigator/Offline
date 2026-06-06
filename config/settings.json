@@ -17,9 +17,10 @@
   "ocr": {
     "engine": "paddle",
     "fallback_engine": "tesseract",
-    "languages": ["en", "sw", "fr", "ar", "es"],
+    "languages": ["en", "sw", "fr", "ar", "es", "de", "zh", "ja", "ko", "ru", "pt", "nl", "pl", "th", "vi", "hi", "bn", "tr", "he", "id", "it", "uk", "cs", "hu", "ro", "sr", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "mk", "sq", "hy", "ka", "kk", "ky", "ta", "te", "kn", "ml", "mr", "ne", "or", "pa", "gu", "as"],
     "confidence_threshold": 0.3,
-    "use_gpu": false
+    "use_gpu": false,
+    "auto_detect_language": true
   },
   "ai": {
     "ollama_base_url": "http://localhost:11434",
