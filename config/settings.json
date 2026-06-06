@@ -1,0 +1,63 @@
+{
+  "app": {
+    "name": "Portable Offline AI Document Reader",
+    "version": "1.0.0",
+    "theme": "dark",
+    "window_width": 1400,
+    "window_height": 900,
+    "language": "en"
+  },
+  "camera": {
+    "device_id": 0,
+    "resolution_width": 1920,
+    "resolution_height": 1080,
+    "fps": 30,
+    "enabled": true
+  },
+  "ocr": {
+    "engine": "paddle",
+    "fallback_engine": "tesseract",
+    "languages": ["en", "sw", "fr", "ar", "es"],
+    "confidence_threshold": 0.3,
+    "use_gpu": false
+  },
+  "ai": {
+    "ollama_base_url": "http://localhost:11434",
+    "model_name": "neural-chat",
+    "enabled": true,
+    "timeout_seconds": 30
+  },
+  "speech": {
+    "engine": "piper",
+    "voice": "en_US-amy-medium",
+    "rate": 1.0,
+    "enabled": true
+  },
+  "storage": {
+    "database_path": "./data/documents.db",
+    "image_storage_path": "./documents",
+    "max_image_size_mb": 50
+  },
+  "logging": {
+    "level": "INFO",
+    "log_file": "./logs/app.log",
+    "max_bytes": 10485760,
+    "backup_count": 5
+  },
+  "ui": {
+    "font_size_small": 12,
+    "font_size_medium": 14,
+    "font_size_large": 16,
+    "accent_color": "#0066cc",
+    "text_color": "#ffffff",
+    "bg_color": "#1a1a1a"
+  },
+  "features": {
+    "enable_camera": true,
+    "enable_ocr": true,
+    "enable_ai": true,
+    "enable_speech": true,
+    "enable_search": true,
+    "enable_export": true
+  }
+}

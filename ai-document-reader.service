@@ -1,0 +1,47 @@
+[Unit]
+Description=Portable Offline AI Document Reader - REST API Server
+Documentation=file:///home/pi/offline-ai-reader/RASPBERRY_PI_GUIDE.md
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/offline-ai-reader
+Environment="PATH=/home/pi/offline-ai-reader/venv/bin:/usr/local/bin:/usr/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata"
+
+# Main command
+ExecStart=/usr/bin/python3 /home/pi/offline-ai-reader/app.py api
+
+# Restart policy
+Restart=on-failure
+RestartSec=30
+# After 3 failures in 300 seconds, give up
+StartLimitAction=stop
+
+# Security and isolation
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/home/pi/offline-ai-reader/data /home/pi/offline-ai-reader/logs /home/pi/offline-ai-reader/uploads
+
+# Resource limits
+MemoryLimit=512M
+CPUQuota=80%
+Nice=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ai-doc-reader
+
+# Timeouts
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
