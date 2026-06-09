@@ -28,8 +28,12 @@ fi
 
 # Update system
 echo -e "${GREEN}[1/7] Updating system packages...${NC}"
-sudo apt-get update
-sudo apt-get upgrade -y
+sudo apt-get update || {
+    echo -e "${RED}⚠️  apt-get update failed. Attempting to fix...${NC}"
+    sudo apt-get clean
+    sudo apt-get update
+}
+sudo apt-get upgrade -y || echo -e "${YELLOW}⚠️  Some packages could not be upgraded${NC}"
 
 # Install system dependencies
 echo -e "${GREEN}[2/7] Installing system dependencies...${NC}"
@@ -37,29 +41,21 @@ sudo apt-get install -y \
     python3-pip \
     python3-dev \
     build-essential \
-    libatlas-base-dev \
-    libjasper-dev \
-    libtiff-dev \
-    libharfbuzz0b \
-    libwebp6 \
-    libjasper1 \
-    libopenjp2-7 \
-    python3-matplotlib \
-    python3-opencv \
     libopenblas-dev \
+    libopenblas0 \
     liblapack-dev \
     libblas-dev \
     gfortran \
-    libharfbuzz0b \
-    libwebp6 \
-    libtiff5 \
-    libjasper1 \
+    python3-numpy \
+    python3-scipy \
+    libatlas3-base \
+    libtiff6 \
     libopenjp2-7 \
-    libatlas-base-dev \
+    libwebp7 \
     libharfbuzz0b \
-    libwebp6 \
-    libopenjp2-7 \
-    libopenblas-dev
+    python3-opencv \
+    python3-pil \
+    libopencv-dev
 
 # Install Tesseract OCR with ALL available language packs
 echo -e "${GREEN}[3/7] Installing Tesseract OCR with all languages...${NC}"
@@ -69,13 +65,17 @@ echo "    Vietnamese, Hindi, Bengali, Turkish, Hebrew, and 100+ more languages"
 sudo apt-get install -y \
     tesseract-ocr \
     tesseract-ocr-all \
-    libtesseract-dev
+    libtesseract-dev || {
+        echo -e "${YELLOW}⚠️  Some tesseract packages may not be available on this system${NC}"
+        echo "    Installing base tesseract OCR..."
+        sudo apt-get install -y tesseract-ocr libtesseract-dev || true
+    }
 
 # Install optional camera support
 echo -e "${GREEN}[4/7] Installing camera libraries...${NC}"
 sudo apt-get install -y \
-    libcamera-dev \
-    libopencv-dev
+    libopencv-dev \
+    libopencv4.5-dev || true
 
 # Install audio and text-to-speech support
 echo -e "${GREEN}[4b/7] Installing audio and TTS libraries...${NC}"
@@ -84,7 +84,11 @@ sudo apt-get install -y \
     pulseaudio \
     espeak-ng \
     libopus0 \
-    libopusfile0
+    libopusfile0 || {
+        echo -e "${YELLOW}⚠️  Some audio packages may not be available${NC}"
+        echo "    Installing essential audio packages..."
+        sudo apt-get install -y alsa-utils espeak-ng || true
+    }
 
 # Install Python packages
 echo -e "${GREEN}[5/7] Installing Python packages...${NC}"
