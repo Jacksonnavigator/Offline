@@ -3,6 +3,7 @@ SQLite database management for document storage
 """
 
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple
 from datetime import datetime
@@ -24,6 +25,7 @@ class DatabaseManager:
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.connection = None
+        self._lock = threading.Lock()
         
         self._initialize_database()
     
@@ -39,7 +41,8 @@ class DatabaseManager:
     def connect(self):
         """Connect to database"""
         try:
-            self.connection = sqlite3.connect(str(self.db_path))
+            # Allow access from multiple threads; serialize operations with a lock
+            self.connection = sqlite3.connect(str(self.db_path), check_same_thread=False)
             self.connection.row_factory = sqlite3.Row
             logger.info("Connected to database")
         except Exception as e:
@@ -120,9 +123,10 @@ class DatabaseManager:
             List of result rows as dictionaries
         """
         try:
-            cursor = self.connection.cursor()
-            cursor.execute(query, params)
-            return [dict(row) for row in cursor.fetchall()]
+            with self._lock:
+                cursor = self.connection.cursor()
+                cursor.execute(query, params)
+                return [dict(row) for row in cursor.fetchall()]
         except Exception as e:
             logger.error(f"Error executing query: {e}")
             return []
@@ -139,13 +143,18 @@ class DatabaseManager:
             True if successful, False otherwise
         """
         try:
-            cursor = self.connection.cursor()
-            cursor.execute(query, params)
-            self.connection.commit()
+            with self._lock:
+                cursor = self.connection.cursor()
+                cursor.execute(query, params)
+                self.connection.commit()
             return True
         except Exception as e:
             logger.error(f"Error executing update: {e}")
-            self.connection.rollback()
+            try:
+                with self._lock:
+                    self.connection.rollback()
+            except Exception:
+                pass
             return False
     
     def save_document(self, title: str, content: str, language: str, image_path: str, 
@@ -168,27 +177,32 @@ class DatabaseManager:
             now = datetime.now().isoformat()
             word_count = len(content.split()) if content else 0
             character_count = len(content) if content else 0
-            
+
             query = '''
                 INSERT INTO documents 
                 (title, content, language, image_path, date_created, date_modified, 
                  word_count, character_count, summary, ocr_confidence)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             '''
-            
-            cursor = self.connection.cursor()
-            cursor.execute(query, (
-                title, content, language, image_path,
-                now, now, word_count, character_count, summary, ocr_confidence
-            ))
-            self.connection.commit()
-            
-            doc_id = cursor.lastrowid
+
+            with self._lock:
+                cursor = self.connection.cursor()
+                cursor.execute(query, (
+                    title, content, language, image_path,
+                    now, now, word_count, character_count, summary, ocr_confidence
+                ))
+                self.connection.commit()
+                doc_id = cursor.lastrowid
+
             logger.info(f"Document saved with ID: {doc_id}")
             return doc_id
         except Exception as e:
             logger.error(f"Error saving document: {e}")
-            self.connection.rollback()
+            try:
+                with self._lock:
+                    self.connection.rollback()
+            except Exception:
+                pass
             return None
     
     def load_document(self, doc_id: int) -> Optional[Dict]:
