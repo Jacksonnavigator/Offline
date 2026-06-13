@@ -11,6 +11,7 @@ import logging
 from functools import wraps
 from app_headless import HeadlessApp
 from utils.logger import get_logger
+from speech.tts_engine import speak_text
 
 logger = get_logger(__name__)
 
@@ -224,6 +225,36 @@ def ask_question(doc_id):
         return jsonify({"error": str(e)}), 500
 
 
+
+@app.route('/api/documents/<int:doc_id>/read', methods=['POST'])
+@require_api_key
+def read_document(doc_id):
+    """Read a document aloud using the configured TTS engine"""
+    try:
+        doc = headless_app.get_document(doc_id)
+        if not doc or 'error' in doc:
+            return jsonify({"error": "Document not found"}), 404
+
+        text = doc.get('content', '') or ''
+        if not text.strip():
+            return jsonify({"error": "Document has no text to read"}), 400
+
+        # Use headless_app config for voice/rate
+        cfg = getattr(headless_app, 'config', {})
+        voice = cfg.get('speech', {}).get('voice') if isinstance(cfg, dict) else None
+        rate = float(cfg.get('speech', {}).get('rate', 1.0)) if isinstance(cfg, dict) else 1.0
+
+        played = speak_text(text, voice=voice, rate=rate)
+        if played:
+            return jsonify({"success": True, "message": "Playback started"})
+        else:
+            return jsonify({"error": "Playback failed"}), 500
+
+    except Exception as e:
+        logger.error(f"Error reading document: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 # ============= Export =============
 
 @app.route('/api/documents/<int:doc_id>/export', methods=['GET'])
@@ -396,9 +427,10 @@ def serve_web_interface():
                 const result = await apiCall('/documents');
                 const html = result.documents.map(doc => `
                     <div class="doc-item">
-                        <h3>${doc.title}</h3>
-                        <p>ID: ${doc.id} | Language: ${doc.language}</p>
-                        <p>${doc.content.substring(0, 100)}...</p>
+                            <h3>${doc.title}</h3>
+                            <p>ID: ${doc.id} | Language: ${doc.language}</p>
+                            <p>${doc.content.substring(0, 100)}...</p>
+                            <button onclick="readDocument(${doc.id})">🔊 Read</button>
                     </div>
                 `).join('');
                 document.getElementById('docList').innerHTML = html || 'No documents found';
@@ -415,6 +447,15 @@ def serve_web_interface():
                 const question = document.getElementById('aiQuestion').value;
                 const result = await apiCall(`/documents/${docId}/ask`, 'POST', {question});
                 document.getElementById('aiResult').innerHTML = `<div class="result"><pre>${JSON.stringify(result, null, 2)}</pre></div>`;
+            }
+
+            async function readDocument(docId) {
+                const response = await fetch(`/api/documents/${docId}/read`, {
+                    method: 'POST',
+                    headers: {'X-API-Key': API_KEY}
+                });
+                const result = await response.json();
+                alert(JSON.stringify(result, null, 2));
             }
             
             // Load stats on page load
