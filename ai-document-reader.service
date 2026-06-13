@@ -1,30 +1,5 @@
 [Unit]
-Description=Portable Offline AI Document Reader (sample unit)
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-User=pi
-WorkingDirectory=%h/offline-ai-reader
-Environment=PYTHONUNBUFFERED=1
-# Prefer run.sh wrapper which will use project's venv if present
-ExecStart=%h/offline-ai-reader/run.sh
-Restart=on-failure
-RestartSec=10
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=ai-doc-reader
-
-[Install]
-WantedBy=multi-user.target
-
-# Notes:
-# - Copy this file to /etc/systemd/system/ai-document-reader.service and run
-#   sudo systemctl daemon-reload
-#   sudo systemctl enable --now ai-document-reader
-# - Adjust User and WorkingDirectory to your installation path.[Unit]
-Description=Portable Offline AI Document Reader - REST API Server
+Description=Portable Offline AI Document Reader - REST API Server (sample)
 Documentation=file:///home/pi/offline-ai-reader/RASPBERRY_PI_GUIDE.md
 After=network-online.target
 Wants=network-online.target
@@ -33,22 +8,22 @@ StartLimitBurst=3
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/offline-ai-reader
-Environment="PATH=/home/pi/offline-ai-reader/venv/bin:/usr/local/bin:/usr/bin"
+# Change 'pi' to the user that owns the installation if needed
+User=sebastian
+# WorkingDirectory set to the path observed during install
+WorkingDirectory=/home/sebastian/Downloads/Offline-main
+Environment="PATH=/home/sebastian/Downloads/Offline-main/venv/bin:/usr/local/bin:/usr/bin"
 Environment="PYTHONUNBUFFERED=1"
 Environment="TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata"
 
-# Main command
-ExecStart=/usr/bin/python3 /home/pi/offline-ai-reader/app.py api
+# Prefer the run.sh wrapper (it will use venv if present)
+ExecStart=/home/sebastian/Downloads/Offline-main/run.sh
 
-# Restart policy
 Restart=on-failure
 RestartSec=30
-# After 3 failures in 300 seconds, give up
 StartLimitAction=stop
 
-# Security and isolation
+# Security and isolation (adjust if causing permission issues)
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=yes
@@ -70,3 +45,7 @@ TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target
+
+# NOTE: This sample unit has been pre-filled for the path you used during install.
+# If you move the project, update `User` and `WorkingDirectory` accordingly.
+
