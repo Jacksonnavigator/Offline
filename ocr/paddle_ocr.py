@@ -30,9 +30,12 @@ class PaddleOCREngine:
             from paddleocr import PaddleOCR
             logger.info(f"Initializing PaddleOCR with languages: {self.languages}, GPU: {use_gpu}")
             
+            # PaddleOCR expects a language code string, not a list.
+            # Join multiple languages with '+' if provided, otherwise use the first.
+            lang_param = self.languages[0] if isinstance(self.languages, list) and len(self.languages) == 1 else '+'.join(self.languages)
             self.ocr = PaddleOCR(
                 use_angle_cls=True,
-                lang=self.languages,
+                lang=lang_param,
                 use_gpu=use_gpu,
                 show_log=False
             )
