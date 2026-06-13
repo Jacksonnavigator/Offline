@@ -70,17 +70,36 @@ class TesseractOCREngine:
             
             for i, conf in enumerate(text_data['conf']):
                 text = text_data['text'][i]
-                confidence = int(conf) / 100.0  # Convert to 0-1 range
-                
-                if text.strip() and confidence >= self.confidence_threshold:
+                try:
+                    confidence = float(conf) / 100.0  # Convert to 0-1 range
+                except Exception:
+                    confidence = 0.0
+
+                # Accept text regardless of threshold into full_text, but only
+                # record details when above threshold. This avoids losing all
+                # extracted text when confidence is low.
+                if text.strip():
                     full_text += text + " "
-                    confidences.append(confidence)
-                    details.append({
-                        "text": text,
-                        "confidence": confidence
-                    })
+                    if confidence >= self.confidence_threshold:
+                        confidences.append(confidence)
+                        details.append({
+                            "text": text,
+                            "confidence": confidence
+                        })
             
             avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
+
+            # If Tesseract returned no words via image_to_data (very common for
+            # low-quality images), fall back to a more permissive image_to_string
+            # which may produce useful text even without confidence info.
+            if not full_text.strip():
+                try:
+                    raw = self.pytesseract.image_to_string(enhanced, lang='+'.join(self.languages))
+                    if raw and raw.strip():
+                        full_text = raw.strip()
+                        # confidences remain empty; avg_confidence stays 0.0
+                except Exception:
+                    pass
             
             result = {
                 "text": full_text.strip(),
