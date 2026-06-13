@@ -90,15 +90,24 @@ sudo apt-get install -y \
         sudo apt-get install -y alsa-utils espeak-ng || true
     }
 
-# Install Python packages
-echo -e "${GREEN}[5/7] Installing Python packages...${NC}"
-pip3 install --upgrade pip setuptools wheel
-pip3 install -r requirements.txt --upgrade
+# Install Python packages inside a virtual environment
+echo -e "${GREEN}[5/7] Preparing Python virtual environment and installing packages...${NC}"
+# Ensure venv support and full Python available
+sudo apt-get install -y python3-venv python3-full || echo -e "${YELLOW}Could not install python3-venv/python3-full; proceeding if venv exists${NC}"
+
+if [ ! -d "venv" ]; then
+    echo "Creating virtual environment at ./venv"
+    python3 -m venv venv
+fi
+
+echo "Installing Python packages into ./venv"
+./venv/bin/python -m pip install --upgrade pip setuptools wheel
+./venv/bin/pip install -r requirements.txt --upgrade
 
 # Install TTS voice models (will download automatically on first use)
-echo -e "${GREEN}[5b/7] Setting up text-to-speech voices...${NC}"
+echo -e "${GREEN}[5b/7] Setting up text-to-speech voices (using venv python)...${NC}"
 mkdir -p ~/.local/share/piper-tts/voices
-python3 -c "import piper; print('Piper TTS ready')" 2>/dev/null || echo "Piper will download voices on first use"
+./venv/bin/python -c "import piper; print('Piper TTS ready')" 2>/dev/null || echo "Piper will download voices on first use"
 
 # Create data directory
 echo -e "${GREEN}[6/7] Creating data directories...${NC}"

@@ -285,6 +285,34 @@ bash setup_raspberry_pi.sh
 # ✓ Systemd service
 ```
 
+### Non-interactive installer
+
+If you prefer a single non-interactive installer that sets up the venv and optionally the systemd service, use `install.sh`:
+
+```bash
+# Make installer executable
+chmod +x install.sh
+
+# Run installer (requires sudo). By default it will install and enable the sample service.
+sudo bash install.sh
+
+# To skip service installation:
+sudo bash install.sh --skip-service
+```
+
+`install.sh` performs the following:
+- Updates apt and installs essential OS packages (including `python3-venv` and `tesseract-ocr`).
+- Creates `./venv` and installs Python packages from `requirements.txt` into the venv.
+- Creates data/log directories.
+- Optionally copies `ai-document-reader.service` into `/etc/systemd/system` and enables/starts it.
+
+After running `install.sh`, verify the service and logs:
+
+```bash
+sudo systemctl status ai-document-reader
+sudo journalctl -u ai-document-reader -f
+```
+
 ### Auto-Start on Boot
 ```bash
 sudo systemctl enable ai-document-reader

@@ -399,6 +399,42 @@ sudo systemctl restart ai-document-reader
     "languages": ["eng"]
   }
 }
+
+---
+
+## venv wrapper and systemd sample
+
+We've added a small run wrapper script and a sample systemd unit in the repository to make running and auto-starting the app more robust:
+
+- `run.sh`: Activates `./venv` if present and runs the app via `app.py api`. Path: [run.sh](run.sh#L1)
+- `ai-document-reader.service`: Sample systemd unit that calls `run.sh`. Path: [ai-document-reader.service](ai-document-reader.service#L1)
+
+Usage:
+
+```bash
+# Make the wrapper executable
+chmod +x run.sh
+
+# Ensure venv exists and dependencies installed
+python3 -m venv venv
+./venv/bin/python -m pip install --upgrade pip setuptools wheel
+./venv/bin/pip install -r requirements.txt
+
+# Install the sample service (modify paths if needed)
+sudo cp ai-document-reader.service /etc/systemd/system/ai-document-reader.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now ai-document-reader
+
+# Check status and logs
+sudo systemctl status ai-document-reader
+sudo journalctl -u ai-document-reader -f
+```
+
+Notes:
+
+- The sample service uses `~` (`%h`) in the unit file as a convenience; update `WorkingDirectory` and `ExecStart` to absolute paths for production installs (e.g., `/home/pi/offline-ai-reader/run.sh`).
+- `setup_service.sh` already writes a systemd unit that prefers `./venv/bin/python`. If you prefer the `run.sh` approach, copy the sample unit into `/etc/systemd/system` as shown above.
+
 ```
 
 ### Issue: Database locked

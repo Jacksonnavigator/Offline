@@ -13,6 +13,9 @@ USER=${SUDO_USER:-$(whoami)}
 
 # Create systemd service file
 echo "Creating service file: ${SERVICE_FILE}"
+[ -x "${APP_DIR}/venv/bin/python" ] && PYTHON_EXEC="${APP_DIR}/venv/bin/python" || PYTHON_EXEC="/usr/bin/python3"
+
+echo "Using python executable: ${PYTHON_EXEC}"
 
 sudo tee ${SERVICE_FILE} > /dev/null <<EOF
 [Unit]
@@ -26,7 +29,7 @@ Type=simple
 User=${USER}
 WorkingDirectory=${APP_DIR}
 Environment="PATH=${APP_DIR}/venv/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStart=/usr/bin/python3 ${APP_DIR}/app.py api
+ExecStart=${PYTHON_EXEC} ${APP_DIR}/app.py api
 Restart=on-failure
 RestartSec=30
 StandardOutput=journal
@@ -45,6 +48,12 @@ EOF
 # Reload systemd daemon
 echo "Reloading systemd daemon..."
 sudo systemctl daemon-reload
+
+# Enable and start the service now
+echo "Enabling and starting ${SERVICE_NAME}..."
+sudo systemctl enable --now ${SERVICE_NAME} || echo "Failed to enable/start ${SERVICE_NAME}. Check systemctl status for details."
+echo "Service status:"
+sudo systemctl status ${SERVICE_NAME} --no-pager || true
 
 echo ""
 echo "✅ Service setup complete!"

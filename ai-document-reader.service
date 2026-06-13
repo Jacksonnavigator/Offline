@@ -1,4 +1,29 @@
 [Unit]
+Description=Portable Offline AI Document Reader (sample unit)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=%h/offline-ai-reader
+Environment=PYTHONUNBUFFERED=1
+# Prefer run.sh wrapper which will use project's venv if present
+ExecStart=%h/offline-ai-reader/run.sh
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ai-doc-reader
+
+[Install]
+WantedBy=multi-user.target
+
+# Notes:
+# - Copy this file to /etc/systemd/system/ai-document-reader.service and run
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now ai-document-reader
+# - Adjust User and WorkingDirectory to your installation path.[Unit]
 Description=Portable Offline AI Document Reader - REST API Server
 Documentation=file:///home/pi/offline-ai-reader/RASPBERRY_PI_GUIDE.md
 After=network-online.target
