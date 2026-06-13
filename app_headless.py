@@ -15,6 +15,7 @@ from ai.document_summarizer import DocumentSummarizer
 from ai.question_answering import QuestionAnswering
 from utils.export import ExportEngine
 from utils.logger import get_logger, load_config
+from speech.tts_engine import speak_text
 
 logger = get_logger(__name__)
 
@@ -82,6 +83,19 @@ class HeadlessApp:
                             image_path=image_path,
                             ocr_confidence=ocr_result.get('confidence', 0.0)
                         )
+
+                        # Optionally speak the extracted text
+                        try:
+                            if self.config.get('features', {}).get('enable_speech', False):
+                                voice = self.config.get('speech', {}).get('voice')
+                                rate = float(self.config.get('speech', {}).get('rate', 1.0))
+                                text = ocr_result.get('text', '') or ''
+                                if text.strip():
+                                    logger.info('Speaking extracted text...')
+                                    # speak_text blocks until playback completes
+                                    speak_text(text, voice=voice, rate=rate)
+                        except Exception as e:
+                            logger.warning(f"TTS playback failed: {e}")
                         
                         return {
                             "success": True,

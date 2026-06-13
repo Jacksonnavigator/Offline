@@ -1,4 +1,103 @@
 """
+TTS engine wrapper: prefer Piper if available, fallback to espeak-ng.
+Provides a simple `speak_text(text)` function that blocks until playback completes.
+"""
+import subprocess
+import tempfile
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _has_piper():
+    try:
+        import piper  # type: ignore
+        return True
+    except Exception:
+        return False
+
+
+def speak_with_piper(text: str, voice: str = None, rate: float = 1.0) -> bool:
+    try:
+        import piper  # type: ignore
+
+        # Use piper to synthesize to a temporary wav then play
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+            wav_path = f.name
+
+        # piper API: piper.synthesize(text, voice=..., output=path)
+        kw = {}
+        if voice:
+            kw['voice'] = voice
+        # Some piper versions accept rate, others don't; guard with try
+        try:
+            piper.synthesize(text, output=wav_path, rate=rate, **kw)  # type: ignore
+        except TypeError:
+            piper.synthesize(text, output=wav_path, **kw)  # type: ignore
+
+        # Play wav using aplay (ALSA) or paplay
+        played = False
+        for player in ("aplay", "paplay"):
+            try:
+                subprocess.run([player, wav_path], check=True)
+                played = True
+                break
+            except Exception:
+                continue
+
+        try:
+            os.remove(wav_path)
+        except Exception:
+            pass
+
+        return played
+    except Exception as e:
+        logger.warning(f"Piper TTS failed: {e}")
+        return False
+
+
+def speak_with_espeak(text: str) -> bool:
+    try:
+        # generate wav and play
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+            wav_path = f.name
+
+        subprocess.run(["espeak-ng", text, "--stdout"], check=True, stdout=open(wav_path, "wb"))
+        # play
+        try:
+            subprocess.run(["aplay", wav_path], check=True)
+        except Exception:
+            try:
+                subprocess.run(["paplay", wav_path], check=True)
+            except Exception:
+                pass
+
+        try:
+            os.remove(wav_path)
+        except Exception:
+            pass
+
+        return True
+    except Exception as e:
+        logger.warning(f"espeak-ng TTS failed: {e}")
+        return False
+
+
+def speak_text(text: str, voice: str = None, rate: float = 1.0) -> bool:
+    """Speak `text` using an available TTS engine. Returns True if played."""
+    if not text:
+        return False
+
+    # Try piper first
+    if _has_piper():
+        ok = speak_with_piper(text, voice=voice, rate=rate)
+        if ok:
+            return True
+
+    # Fallback to espeak-ng
+    return speak_with_espeak(text)
+"""
 Text-to-Speech engine using Piper TTS for offline speech synthesis
 """
 
